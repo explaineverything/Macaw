@@ -13,7 +13,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
 
     override open class var layerClass: AnyClass {
         get {
-            return MyTiledLayer.self
+            return CATiledLayer.self
         }
     }
 
@@ -153,7 +153,6 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         self.context = RenderContext(view: self)
 
         myBounds = bounds
-//        print("1")
 
         layer.levelsOfDetail = 4;
         layer.levelsOfDetailBias = 6;
@@ -162,8 +161,6 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         guard let layer = self.mLayer else {
             return
         }
-
-//        print("2")
 
         self.animationCache = AnimationCache(sceneLayer: layer)
 
@@ -202,22 +199,6 @@ open class MacawView: MView, MGestureRecognizerDelegate {
     }
 
     override open func draw(_ layer: CALayer, in ctx: CGContext) {
-//        context.cgContext = MGraphicsGetCurrentContext()
-
-//        guard let ctx = context.cgContext else {
-//            return
-//        }
-
-//        DispatchQueue.main.sync {
-//            if self.backgroundColor == nil {
-//                ctx.clear(self.bounds)
-//            }
-//        }
-
-//        ctx.clip(to: ctx.boundingBoxOfClipPath)
-
-        print("ctx.boundingBoxOfClipPath:", ctx.boundingBoxOfClipPath)
-
 
         guard let renderer = renderer else {
             return
@@ -227,30 +208,6 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         ctx.concatenate(layoutHelper.getTransform(renderer, contentLayout, myBounds.size.toMacaw()))
         renderer.render(in: ctx, force: false, opacity: node.opacity)
     }
-
-//    override open func draw(_ rect: CGRect) {
-//
-////        DispatchQueue.main.async {
-//
-//            self.context.cgContext = MGraphicsGetCurrentContext()
-//            guard let ctx = self.context.cgContext else {
-//                return
-//            }
-//
-//            print("rect:", rect)
-//
-//            //        if self.backgroundColor == nil {
-//            //            ctx.clear(rect)
-//            //        }
-//
-//            guard let renderer = self.renderer else {
-//                return
-//            }
-//            renderer.calculateZPositionRecursively()
-//            ctx.concatenate(self.layoutHelper.getTransform(renderer, self.contentLayout, self.myBounds.size.toMacaw()))
-//            renderer.render(in: ctx, force: false, opacity: self.node.opacity)
-////        }
-//    }
 
     public final func findNodeAt(location: CGPoint) -> Node? {
         guard let ctx = context.cgContext else {
@@ -687,17 +644,5 @@ class LayoutHelper {
         prevTransform = transform
         return transform
     }
-
-}
-
-class MyTiledLayer: CATiledLayer {
-
-//    override class func fadeDuration() -> CFTimeInterval {
-//        return 0.0
-//    }
-//
-//    class func shouldDrawOnMainThread() -> Bool {
-//        return true;
-//    }
 
 }
