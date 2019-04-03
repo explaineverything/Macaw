@@ -117,7 +117,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
     }
     #endif
 
-    public init?(node: Node, coder aDecoder: NSCoder) {
+    @objc public init?(node: Node, coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
 
         initializeView()
@@ -145,7 +145,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         initializeView()
     }
 
-    public convenience required init?(coder aDecoder: NSCoder) {
+    @objc public convenience required init?(coder aDecoder: NSCoder) {
         self.init(node: Group(), coder: aDecoder)
     }
 
@@ -304,7 +304,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
 
             var points = [TouchPoint]()
             for initialTouch in initialTouches {
-                guard let currentIndex = touches.index(of: initialTouch) else {
+                guard let currentIndex = touches.firstIndex(of: initialTouch) else {
                     continue
                 }
                 let currentTouch = touches[currentIndex]
@@ -349,7 +349,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
                 let touchEvent = TouchEvent(node: node, points: [point])
 
                 node.handleTouchReleased(touchEvent)
-                if let index = touchesOfNode[node]?.index(of: touch) {
+                if let index = touchesOfNode[node]?.firstIndex(of: touch) {
                     touchesOfNode[node]?.remove(at: index)
                     // swiftlint:disable empty_count
                     if let count = touchesOfNode[node]?.count, count == 0 {
