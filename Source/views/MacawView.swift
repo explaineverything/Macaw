@@ -98,6 +98,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
     var frameSetFirstTime = false
 
     var myBounds = CGRect(x: 0, y: 0, width: 0, height: 0)
+    weak var weakSelf: MacawView?
 
     internal var animationCache: AnimationCache?
 
@@ -153,6 +154,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         self.context = RenderContext(view: self)
 
         myBounds = bounds
+        weakSelf = self
 
         layer.levelsOfDetail = 4;
         layer.levelsOfDetailBias = 6;
@@ -200,13 +202,14 @@ open class MacawView: MView, MGestureRecognizerDelegate {
 
     override open func draw(_ layer: CALayer, in ctx: CGContext) {
 
-        guard let renderer = renderer else {
+        guard let strongSelf = weakSelf,
+            let renderer = strongSelf.renderer else {
             return
         }
 
         renderer.calculateZPositionRecursively()
-        ctx.concatenate(layoutHelper.getTransform(renderer, contentLayout, myBounds.size.toMacaw()))
-        renderer.render(in: ctx, force: false, opacity: node.opacity)
+        ctx.concatenate(strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
+        renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
     }
 
     public final func findNodeAt(location: CGPoint) -> Node? {
