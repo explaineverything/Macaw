@@ -129,6 +129,10 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         backgroundColor = .white
     }
 
+    deinit {
+        layer.delegate = nil
+    }
+
     public convenience init(node: Node, frame: CGRect) {
         self.init(frame: frame)
 
