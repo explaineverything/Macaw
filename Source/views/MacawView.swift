@@ -11,15 +11,19 @@ import AppKit
 ///
 open class MacawView: MView, MGestureRecognizerDelegate {
 
+    #if os(iOS)
     override open class var layerClass: AnyClass {
         get {
             return CATiledLayer.self
         }
     }
-
-    override open var layer: CATiledLayer {
-        return super.layer as! CATiledLayer
+    #else
+    open class var layerClass: AnyClass {
+        get {
+            return CATiledLayer.self
+        }
     }
+    #endif
 
     /// Scene root node
     open var node: Node = Group() {
@@ -120,7 +124,11 @@ open class MacawView: MView, MGestureRecognizerDelegate {
     @objc public init?(node: Node, coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
 
+        #if os(iOS)
         initializeView()
+        #else
+        createLayer()
+        #endif
 
         self.node = node
         if let cache = self.animationCache {
@@ -130,7 +138,8 @@ open class MacawView: MView, MGestureRecognizerDelegate {
     }
 
     deinit {
-        layer.delegate = nil
+        let thisLayer = layer as CALayer?
+        thisLayer?.delegate = nil
     }
 
     public convenience init(node: Node, frame: CGRect) {
@@ -146,12 +155,26 @@ open class MacawView: MView, MGestureRecognizerDelegate {
     public override init(frame: CGRect) {
         super.init(frame: frame)
 
+        #if os(iOS)
         initializeView()
+        #else
+        createLayer()
+        #endif
     }
 
     @objc public convenience required init?(coder aDecoder: NSCoder) {
         self.init(node: Group(), coder: aDecoder)
     }
+
+    #if os(OSX)
+    private func createLayer() {
+        let className = type(of: self).layerClass as! CATiledLayer.Type
+        let tiledLayer = className.init()
+        tiledLayer.delegate = self
+        tiledLayer.frame = bounds
+        layer = tiledLayer
+    }
+    #endif
 
     func initializeView() {
         self.contentLayout = .none
@@ -160,9 +183,13 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         myBounds = bounds
         weakSelf = self
 
-        layer.levelsOfDetail = 4;
-        layer.levelsOfDetailBias = 6;
-        layer.tileSize = CGSize(width: 512, height: 512);
+        guard let tiledLayer = layer as? CATiledLayer else {
+            return
+        }
+
+        tiledLayer.levelsOfDetail = 4
+        tiledLayer.levelsOfDetailBias = 6
+        tiledLayer.tileSize = CGSize(width: 512, height: 512)
 
         guard let layer = self.mLayer else {
             return
@@ -204,6 +231,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         setNeedsDisplay()
     }
 
+    #if os(iOS)
     override open func draw(_ layer: CALayer, in ctx: CGContext) {
 
         guard let strongSelf = weakSelf,
@@ -215,6 +243,19 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         ctx.concatenate(strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
         renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
     }
+    #else
+    open func draw(_ layer: CALayer, in ctx: CGContext) {
+
+        guard let strongSelf = weakSelf,
+            let renderer = strongSelf.renderer else {
+                return
+        }
+
+        renderer.calculateZPositionRecursively()
+        ctx.concatenate(strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
+        renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
+    }
+    #endif
 
     public final func findNodeAt(location: CGPoint) -> Node? {
         guard let ctx = context.cgContext else {
@@ -653,3 +694,10 @@ class LayoutHelper {
     }
 
 }
+
+#if os(OSX)
+//INFO: needed for macOS, because custom layer is created and delegate ia assigned
+extension MacawView: CALayerDelegate {
+
+}
+#endif
