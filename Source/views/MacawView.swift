@@ -260,7 +260,11 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         }
 
         renderer.calculateZPositionRecursively()
-        ctx.concatenate(strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
+
+        // TODO: actually we should track all changes
+        strongSelf.placeManager.setLayout(place: strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
+
+        ctx.concatenate(strongSelf.place.toCG())
         renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
     }
     #else
@@ -274,10 +278,10 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         renderer.calculateZPositionRecursively()
 
         // TODO: actually we should track all changes
-        placeManager.setLayout(place: layoutHelper.getTransform(renderer, contentLayout, bounds.size.toMacaw()))
+        strongSelf.placeManager.setLayout(place: strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
 
         ctx.concatenate(strongSelf.place.toCG())
-        renderer.render(in: ctx, force: false, opacity: node.opacity)
+        renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
     }
     #endif
 
