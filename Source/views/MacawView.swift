@@ -228,7 +228,8 @@ open class MacawView: MView, MGestureRecognizerDelegate {
 
         myBounds = bounds
 
-        setNeedsDisplay()
+        //INFO: commented, because of not needed refreshing on iPad Pro 12,9''
+//        setNeedsDisplay()
     }
 
     #if os(iOS)
