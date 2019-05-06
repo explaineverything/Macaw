@@ -548,8 +548,20 @@ class RenderUtils {
         ctx!.setLineCap(stroke.cap.toCG())
         ctx!.setMiterLimit(CGFloat(stroke.miterLimit))
         if !stroke.dashes.isEmpty {
-            ctx?.setLineDash(phase: CGFloat(stroke.offset),
-                             lengths: stroke.dashes.map { CGFloat($0) })
+
+            //INFO: if there is only zero dash - do not set line dash
+            var isAnyNonZeroDash = false
+            for dash in stroke.dashes {
+                if dash != 0 {
+                    isAnyNonZeroDash = true
+                    break
+                }
+            }
+
+            if (isAnyNonZeroDash) {
+                ctx?.setLineDash(phase: CGFloat(stroke.offset),
+                                 lengths: stroke.dashes.map { CGFloat($0) })
+            }
         }
     }
 
