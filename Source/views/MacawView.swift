@@ -229,7 +229,13 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         myBounds = bounds
 
         //INFO: commented, because of not needed refreshing on iPad Pro 12,9''
-//        setNeedsDisplay()
+        //setNeedsDisplay()
+    }
+
+    private func lock(obj: AnyObject, blk:() -> ()) {
+        objc_sync_enter(obj)
+        blk()
+        objc_sync_exit(obj)
     }
 
     #if os(iOS)
@@ -240,16 +246,30 @@ open class MacawView: MView, MGestureRecognizerDelegate {
             return
         }
 
-        renderer.calculateZPositionRecursively()
-        ctx.concatenate(strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
-        renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
+        if #available(iOS 12, *) {
+
+            renderer.calculateZPositionRecursively()
+            ctx.concatenate(strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
+
+            renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
+        }
+        else {
+
+            strongSelf.lock(obj: renderer) {
+
+                renderer.calculateZPositionRecursively()
+                ctx.concatenate(strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
+
+                renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
+            }
+        }
     }
     #else
     open func draw(_ layer: CALayer, in ctx: CGContext) {
 
         guard let strongSelf = weakSelf,
             let renderer = strongSelf.renderer else {
-                return
+            return
         }
 
         renderer.calculateZPositionRecursively()
