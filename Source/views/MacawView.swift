@@ -246,10 +246,11 @@ open class MacawView: MView, MGestureRecognizerDelegate {
     open override func layoutSubviews() {
         super.layoutSubviews()
 
-        myBounds = bounds
-
-        //INFO: commented, because of not needed refreshing on iPad Pro 12,9''
-        //setNeedsDisplay()
+        //INFO: added condition, because of not needed refreshing on iPad Pro 12,9''
+        if (myBounds != bounds) {
+            myBounds = bounds
+            setNeedsDisplay()
+        }
     }
 
     private func lock(obj: AnyObject, blk:() -> ()) {
