@@ -141,7 +141,9 @@ open class SVGParser {
 
     fileprivate func prepareSvg(_ children: [XMLIndexer]) throws {
         try children.forEach { child in
-            try prepareSvg(child)
+            try autoreleasepool {
+                try prepareSvg(child)
+            }
         }
     }
 
@@ -151,7 +153,9 @@ open class SVGParser {
                 parseStyle(node)
             } else if element.name == "defs" || element.name == "g" {
                 try node.children.forEach { child in
-                    try prepareSvg(child)
+                    try autoreleasepool {
+                        try prepareSvg(child)
+                    }
                 }
             }
             if let id = element.allAttributes["id"]?.text {
@@ -175,11 +179,13 @@ open class SVGParser {
 
     fileprivate func parseSvg(_ children: [XMLIndexer]) throws {
         try children.forEach { child in
-            if let element = child.element {
-                if element.name == "svg" {
-                    try parseSvg(child.children)
-                } else if let node = try parseNode(child) {
-                    self.nodes.append(node)
+            try autoreleasepool {
+                if let element = child.element {
+                    if element.name == "svg" {
+                        try parseSvg(child.children)
+                    } else if let node = try parseNode(child) {
+                        self.nodes.append(node)
+                    }
                 }
             }
         }
@@ -379,8 +385,10 @@ open class SVGParser {
         } else {
             var shapes = [Shape]()
             try pattern.children.forEach { indexer in
-                if let shape = try parseNode(indexer) as? Shape {
-                    shapes.append(shape)
+                try autoreleasepool {
+                    if let shape = try parseNode(indexer) as? Shape {
+                        shapes.append(shape)
+                    }
                 }
             }
             contentNode = Group(contents: shapes)
@@ -395,8 +403,10 @@ open class SVGParser {
         }
         var groupNodes: [Node] = []
         try group.children.forEach { child in
-            if let node = try parseNode(child, groupStyle: style) {
-                groupNodes.append(node)
+            try autoreleasepool {
+                if let node = try parseNode(child, groupStyle: style) {
+                    groupNodes.append(node)
+                }
             }
         }
         return Group(contents: groupNodes, place: getPosition(element), tag: getTag(element))
@@ -1095,11 +1105,13 @@ open class SVGParser {
         }
         var path: Path? = .none
         try clip.children.forEach { indexer in
-            if let shape = try parseNode(indexer) as? Shape {
-                if let p = path {
-                    path = Path(segments: p.segments + shape.form.toPath().segments, fillRule: p.fillRule)
-                } else {
-                    path = Path(segments: shape.form.toPath().segments)
+            try autoreleasepool {
+                if let shape = try parseNode(indexer) as? Shape {
+                    if let p = path {
+                        path = Path(segments: p.segments + shape.form.toPath().segments, fillRule: p.fillRule)
+                    } else {
+                        path = Path(segments: shape.form.toPath().segments)
+                    }
                 }
             }
         }
@@ -1124,11 +1136,13 @@ open class SVGParser {
 
         var nodes = [Node]()
         try mask.children.forEach { indexer in
-            let position = getPosition(indexer.element!)
-            if let useNode = try parseUse(indexer, groupStyle: styles, place: position) {
-                nodes.append(useNode)
-            } else if let contentNode = try parseNode(indexer, groupStyle: styles) {
-                nodes.append(contentNode)
+            try autoreleasepool {
+                let position = getPosition(indexer.element!)
+                if let useNode = try parseUse(indexer, groupStyle: styles, place: position) {
+                    nodes.append(useNode)
+                } else if let contentNode = try parseNode(indexer, groupStyle: styles) {
+                    nodes.append(contentNode)
+                }
             }
         }
 
@@ -1336,8 +1350,10 @@ open class SVGParser {
     fileprivate func parseStops(_ stops: [XMLIndexer], groupStyle: [String: String] = [:]) -> [Stop] {
         var result = [Stop]()
         stops.forEach { stopXML in
-            if let stop = parseStop(stopXML, groupStyle: groupStyle) {
-                result.append(stop)
+            autoreleasepool {
+                if let stop = parseStop(stopXML, groupStyle: groupStyle) {
+                    result.append(stop)
+                }
             }
         }
         return result
@@ -1582,8 +1598,10 @@ open class SVGParser {
         if let group = referenceNode as? Group {
             var contents = [Node]()
             group.contents.forEach { node in
-                if let copy = copyNode(node) {
-                    contents.append(copy)
+                autoreleasepool {
+                    if let copy = copyNode(node) {
+                        contents.append(copy)
+                    }
                 }
             }
             return Group(contents: contents, place: pos, opaque: opaque, clip: clip, visible: visible, tag: tag)

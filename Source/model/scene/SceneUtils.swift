@@ -51,8 +51,10 @@ class SceneUtils {
         if let group = referenceNode as? Group {
             var contents = [Node]()
             group.contents.forEach { node in
-                if let copy = copyNode(node) {
-                    contents.append(copy)
+                autoreleasepool {
+                    if let copy = copyNode(node) {
+                        contents.append(copy)
+                    }
                 }
             }
             return Group(contents: contents, place: pos, opaque: opaque, clip: clip, visible: visible, tag: tag)
