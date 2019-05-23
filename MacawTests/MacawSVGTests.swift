@@ -265,6 +265,10 @@ class MacawSVGTests: XCTestCase {
         validateJSON("color-prop-01-b-manual")
     }
     
+    func testColorProp05() {
+        validateJSON("color-prop-05-t-manual")
+    }
+    
     func testShapesEllipse01() {
         validateJSON("shapes-ellipse-01-t-manual")
     }
@@ -473,12 +477,16 @@ class MacawSVGTests: XCTestCase {
         validateJSON("struct-frag-03-t-manual")
     }
     
-    func testStructUse12() {
-        validateJSON("struct-use-12-f-manual")
+    func testStructUse01() {
+        validateJSON("struct-use-01-t-manual")
     }
     
     func testStructUse03() {
         validateJSON("struct-use-03-t-manual")
+    }
+    
+    func testStructUse12() {
+        validateJSON("struct-use-12-f-manual")
     }
     
     func testColorProp03() {
