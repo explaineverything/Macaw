@@ -31,9 +31,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         didSet {
             layoutHelper.nodeChanged()
             self.renderer?.dispose()
-            if let cache = animationCache {
-                self.renderer = RenderUtils.createNodeRenderer(node, view: self, animationCache: cache)
-            }
+            self.renderer = RenderUtils.createNodeRenderer(node, view: self)
 
             if let _ = superview {
                 animationProducer.addStoredAnimations(node, self)
@@ -117,8 +115,6 @@ open class MacawView: MView, MGestureRecognizerDelegate {
     var myBounds = CGRect(x: 0, y: 0, width: 0, height: 0)
     weak var weakSelf: MacawView?
 
-    internal var animationCache: AnimationCache?
-
     #if os(OSX)
     open override var layer: CALayer? {
         didSet {
@@ -127,9 +123,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
             }
             initializeView()
 
-            if let cache = self.animationCache {
-                self.renderer = RenderUtils.createNodeRenderer(node, view: self, animationCache: cache)
-            }
+            self.renderer = RenderUtils.createNodeRenderer(node, view: self)
         }
     }
     #endif
@@ -145,9 +139,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         #endif
 
         self.node = node
-        if let cache = self.animationCache {
-            self.renderer = RenderUtils.createNodeRenderer(node, view: self, animationCache: cache)
-        }
+        self.renderer = RenderUtils.createNodeRenderer(node, view: self)
         backgroundColor = .white
     }
 
@@ -160,9 +152,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         self.init(frame: frame)
 
         self.node = node
-        if let cache = self.animationCache {
-            self.renderer = RenderUtils.createNodeRenderer(node, view: self, animationCache: cache)
-        }
+        self.renderer = RenderUtils.createNodeRenderer(node, view: self)
         backgroundColor = .white
     }
 
@@ -210,12 +200,6 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         tiledLayer.levelsOfDetail = 4
         tiledLayer.levelsOfDetailBias = 6
         tiledLayer.tileSize = CGSize(width: 512, height: 512)
-
-        guard let layer = self.mLayer else {
-            return
-        }
-
-        self.animationCache = AnimationCache(sceneLayer: layer)
 
         let tapRecognizer = MTapGestureRecognizer(target: self, action: #selector(MacawView.handleTap))
         let longTapRecognizer = MLongPressGestureRecognizer(target: self, action: #selector(MacawView.handleLongTap(recognizer:)))
@@ -320,23 +304,18 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         guard let renderer = renderer else {
             return .none
         }
-        ctx.saveGState()
-        defer {
-            ctx.restoreGState()
-        }
-        let transform = place.toCG()
-        ctx.concatenate(transform)
-        let loc = location.applying(transform.inverted())
-        return renderer.findNodeAt(parentNodePath: NodePath(node: Node(), location: loc), ctx: ctx)
+        return renderer.findNodeAt(location: location, ctx: ctx)
     }
 
     private func doFindNode(location: CGPoint) -> NodePath? {
         MGraphicsBeginImageContextWithOptions(self.bounds.size, false, 1.0)
-        if let ctx = MGraphicsGetCurrentContext() {
-            return doFindNode(location: location, ctx: ctx)
+        defer {
+            MGraphicsEndImageContext()
         }
-        MGraphicsEndImageContext()
-        return .none
+        guard let ctx = MGraphicsGetCurrentContext() else {
+            return .none
+        }
+        return doFindNode(location: location, ctx: ctx)
     }
 
     // MARK: - Touches
@@ -365,12 +344,17 @@ open class MacawView: MView, MGestureRecognizerDelegate {
             let inverted = node.place.invert()!
             let loc = location.applying(inverted.toCG())
 
+            var relativeToView = CGPoint.zero
+            if let invertedViewPlace = self.place.invert() {
+                relativeToView = location.applying(invertedViewPlace.toCG())
+            }
+
             let id = Int(bitPattern: Unmanaged.passUnretained(touch).toOpaque())
 
             while let current = nodePath {
                 let node = current.node
                 let relativeLocation = current.location
-                let point = TouchPoint(id: id, location: loc.toMacaw(), relativeLocation: relativeLocation.toMacaw())
+                let point = TouchPoint(id: id, location: loc.toMacaw(), relativeToNodeLocation: relativeLocation.toMacaw(), relativeToViewLocation: relativeToView.toMacaw())
                 let touchEvent = TouchEvent(node: node, points: [point])
 
                 if touchesOfNode[node] == nil {
@@ -402,6 +386,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
                 return
             }
 
+            let invertedViewPlace = self.place.invert()
             var points = [TouchPoint]()
             for initialTouch in initialTouches {
                 guard let currentIndex = touchPoints.firstIndex(of: initialTouch) else {
@@ -414,7 +399,13 @@ open class MacawView: MView, MGestureRecognizerDelegate {
                 let location = CGPoint(x: currentTouch.x, y: currentTouch.y)
                 let inverted = currentNode.place.invert()!
                 let loc = location.applying(inverted.toCG())
-                let point = TouchPoint(id: currentTouch.id, location: loc.toMacaw(), relativeLocation: nodePath.location.toMacaw())
+
+                var relativeToView = CGPoint.zero
+                if let invertedViewPlace = invertedViewPlace {
+                    relativeToView = location.applying(invertedViewPlace.toCG())
+                }
+
+                let point = TouchPoint(id: currentTouch.id, location: loc.toMacaw(), relativeToNodeLocation: nodePath.location.toMacaw(), relativeToViewLocation: relativeToView.toMacaw())
                 points.append(point)
             }
 
@@ -445,6 +436,7 @@ open class MacawView: MView, MGestureRecognizerDelegate {
             return
         }
 
+        let invertedViewPlace = self.place.invert()
         let touchPoints = convert(touches: touches)
         for touch in touchPoints {
 
@@ -454,8 +446,14 @@ open class MacawView: MView, MGestureRecognizerDelegate {
                 let inverted = node.place.invert()!
                 let location = CGPoint(x: touch.x, y: touch.y)
                 let loc = location.applying(inverted.toCG())
+
+                var relativeToView = CGPoint.zero
+                if let invertedViewPlace = invertedViewPlace {
+                    relativeToView = location.applying(invertedViewPlace.toCG())
+                }
+
                 let id = Int(bitPattern: Unmanaged.passUnretained(touch).toOpaque())
-                let point = TouchPoint(id: id, location: loc.toMacaw(), relativeLocation: nodePath.location.toMacaw())
+                let point = TouchPoint(id: id, location: loc.toMacaw(), relativeToNodeLocation: nodePath.location.toMacaw(), relativeToViewLocation: relativeToView.toMacaw())
                 let touchEvent = TouchEvent(node: node, points: [point])
 
                 node.handleTouchReleased(touchEvent)
@@ -679,8 +677,8 @@ class LayoutHelper {
 
     public func getTransform(_ nodeRenderer: NodeRenderer, _ layout: ContentLayout, _ size: Size) -> Transform {
         setSize(size: size)
-        let node = nodeRenderer.node()
-        var rect = node?.bounds
+        let node = nodeRenderer.node
+        var rect = node.bounds
         if let canvas = node as? SVGCanvas {
             if let _ = nodeRenderer.view {
                 //TODO: changed
@@ -733,10 +731,8 @@ class LayoutHelper {
     }
 
     private func setSize(size: Size) {
-        if let prevSize = prevSize {
-            if prevSize == size {
-                return
-            }
+        if let prevSize = prevSize, prevSize == size {
+            return
         }
         prevSize = size
         prevRect = nil
