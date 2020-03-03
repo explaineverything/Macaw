@@ -471,7 +471,7 @@ open class SVGParser {
         if let units = element.allAttributes["patternContentUnits"]?.text, units == "objectBoundingBox" {
             contentUserSpace = false
         }
-        
+
         var contentNode: Node?
         if pattern.children.isEmpty {
             if let parentPattern = parentPattern {
@@ -1615,7 +1615,7 @@ open class SVGParser {
         guard let element = stop.element else {
             return .none
         }
-        
+
         var offset: Double = 0 // This is default value, value can be omitted
         if let parsedOffset = getDoubleValueFromPercentage(element, attribute: "offset") {
             offset = parsedOffset
