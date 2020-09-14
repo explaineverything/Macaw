@@ -251,7 +251,8 @@ open class MacawView: MView, MGestureRecognizerDelegate {
             return
         }
 
-        if #available(iOS 12, *) {
+        //INFO: CATiledLayer draws using concurent queue, Macaw needs serial access (it doesn't support multithreading)
+        strongSelf.lock(obj: renderer) {
 
             renderer.calculateZPositionRecursively()
 
@@ -260,19 +261,6 @@ open class MacawView: MView, MGestureRecognizerDelegate {
 
             ctx.concatenate(strongSelf.place.toCG())
             renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
-        }
-        else {
-
-            strongSelf.lock(obj: renderer) {
-
-                renderer.calculateZPositionRecursively()
-
-                // TODO: actually we should track all changes
-                strongSelf.placeManager.setLayout(place: strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
-
-                ctx.concatenate(strongSelf.place.toCG())
-                renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
-            }
         }
     }
     #else
