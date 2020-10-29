@@ -1,4 +1,4 @@
-enum SVGLength {
+public enum SVGLength {
     case percent(Double)
     case pixels(Double)
 
@@ -21,10 +21,10 @@ enum SVGLength {
 
 }
 
-class SVGSize {
+public class SVGSize {
 
-    let width: SVGLength
-    let height: SVGLength
+    public let width: SVGLength
+    public let height: SVGLength
 
     public init(width: SVGLength, height: SVGLength) {
         self.width = width
@@ -38,20 +38,20 @@ class SVGSize {
 
 }
 
-protocol NodeLayout {
+public protocol NodeLayout {
 
     func computeSize(parent: Size) -> Size
 
     func layout(node: Node, in size: Size)
 }
 
-class SVGNodeLayout: NodeLayout {
+public class SVGNodeLayout: NodeLayout {
 
-    let svgSize: SVGSize
-    let viewBox: Rect?
-    let scaling: AspectRatio
-    let xAlign: Align
-    let yAlign: Align
+    public let svgSize: SVGSize
+    public let viewBox: Rect?
+    public let scaling: AspectRatio
+    public let xAlign: Align
+    public let yAlign: Align
 
     init(svgSize: SVGSize, viewBox: Rect? = .none, scaling: AspectRatio? = nil, xAlign: Align? = nil, yAlign: Align? = nil) {
         self.svgSize = svgSize
@@ -61,11 +61,11 @@ class SVGNodeLayout: NodeLayout {
         self.yAlign = yAlign ?? .mid
     }
 
-    func computeSize(parent: Size) -> Size {
+    public func computeSize(parent: Size) -> Size {
         return svgSize.toPixels(total: parent)
     }
 
-    func layout(node: Node, in size: Size) {
+    public func layout(node: Node, in size: Size) {
         let svgSizeInPixels = svgSize.toPixels(total: size)
 
         if let viewBox = self.viewBox {
