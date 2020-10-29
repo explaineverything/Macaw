@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2D0FEE712546A10500C6D8F1 /* Macaw-umbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D0FEE6F2546A0D900C6D8F1 /* Macaw-umbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3002331C20CC0BDD00EFD92D /* BoundsUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3002331B20CC0BDD00EFD92D /* BoundsUtils.swift */; };
 		3002331D20CC0BDD00EFD92D /* BoundsUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3002331B20CC0BDD00EFD92D /* BoundsUtils.swift */; };
 		3081E77D20DB58B100640F96 /* DescriptionExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3081E77C20DB58B100640F96 /* DescriptionExtensions.swift */; };
@@ -718,6 +719,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2D0FEE6E2546A0B100C6D8F1 /* Macaw.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = Macaw.modulemap; sourceTree = "<group>"; };
+		2D0FEE6F2546A0D900C6D8F1 /* Macaw-umbrella.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Macaw-umbrella.h"; sourceTree = "<group>"; };
 		3002331B20CC0BDD00EFD92D /* BoundsUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundsUtils.swift; sourceTree = "<group>"; };
 		3081E77C20DB58B100640F96 /* DescriptionExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionExtensions.swift; sourceTree = "<group>"; };
 		30FF495F215CDD5700FF653C /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
@@ -1290,6 +1293,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2D0FEE6B2546A03300C6D8F1 /* Support Files */ = {
+			isa = PBXGroup;
+			children = (
+				2D0FEE6F2546A0D900C6D8F1 /* Macaw-umbrella.h */,
+				2D0FEE6E2546A0B100C6D8F1 /* Macaw.modulemap */,
+			);
+			path = "Support Files";
+			sourceTree = "<group>";
+		};
 		30FF495E215CDD5700FF653C /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -1786,6 +1798,7 @@
 				57F108791F53C92000DC365B /* MDisplayLink.swift */,
 				572CEFC31E2CED4B008C7C83 /* Dependencies */,
 				57E5E0E01E3B393900D1CB28 /* Source */,
+				2D0FEE6B2546A03300C6D8F1 /* Support Files */,
 			);
 			name = Macaw;
 			path = Source;
@@ -2128,6 +2141,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2D0FEE712546A10500C6D8F1 /* Macaw-umbrella.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3186,6 +3200,7 @@
 				INFOPLIST_FILE = "$(SRCROOT)/Source/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "";
+				MODULEMAP_FILE = "$(SRCROOT)/Source/Support Files/Macaw.modulemap";
 				OTHER_SWIFT_FLAGS = "-D CARTHAGE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.exyte.Macaw;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3211,6 +3226,7 @@
 				INFOPLIST_FILE = "$(SRCROOT)/Source/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "";
+				MODULEMAP_FILE = "$(SRCROOT)/Source/Support Files/Macaw.modulemap";
 				OTHER_SWIFT_FLAGS = "-D CARTHAGE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.exyte.Macaw;
 				PRODUCT_NAME = "$(TARGET_NAME)";
