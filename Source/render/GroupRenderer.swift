@@ -13,7 +13,7 @@ class GroupRenderer: NodeRenderer {
         return group
     }
 
-    init(group: Group, view: MacawView?, parentRenderer: GroupRenderer? = nil) {
+    init(group: Group, view: DrawingView?, parentRenderer: GroupRenderer? = nil) {
         self.group = group
         super.init(node: group, view: view, parentRenderer: parentRenderer)
         updateRenderers()
@@ -71,7 +71,7 @@ class GroupRenderer: NodeRenderer {
         renderers.removeAll()
 
         renderers = group.contents.compactMap { child -> NodeRenderer? in
-            return RenderUtils.createNodeRenderer(child, view: view, parentRenderer: self)
+            RenderUtils.createNodeRenderer(child, view: view, parentRenderer: self)
         }
 
         var parent: NodeRenderer = self

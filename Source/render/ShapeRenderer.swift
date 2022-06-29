@@ -10,7 +10,7 @@ class ShapeRenderer: NodeRenderer {
 
     var shape: Shape
 
-    init(shape: Shape, view: MacawView?, parentRenderer: GroupRenderer? = nil) {
+    init(shape: Shape, view: DrawingView?, parentRenderer: GroupRenderer? = nil) {
         self.shape = shape
         super.init(node: shape, view: view, parentRenderer: parentRenderer)
     }
@@ -172,9 +172,11 @@ class ShapeRenderer: NodeRenderer {
             let boundsTranform = BoundsUtils.transformForLocusInRespectiveCoords(respectiveLocus: pattern.bounds, absoluteLocus: shape.form)
             patternBounds = pattern.bounds.applying(boundsTranform)
         }
-        let tileImage = renderer.renderToImage(bounds: patternBounds, inset: 0)
+        guard let tileCGImage = renderer.renderToImage(bounds: patternBounds, inset: 0)?.cgImage else {
+            return
+        }
         ctx?.clip()
-        ctx?.draw(tileImage.cgImage!, in: patternBounds.toCG(), byTiling: true)
+        ctx?.draw(tileCGImage, in: patternBounds.toCG(), byTiling: true)
     }
 
     fileprivate func drawGradient(_ gradient: Gradient, ctx: CGContext?, opacity: Double) {

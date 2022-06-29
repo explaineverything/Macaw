@@ -22,14 +22,14 @@ class CachedLayer {
 
 class NodeRenderer {
 
-    weak var view: MacawView?
+    weak var view: DrawingView?
     var sceneLayer: CALayer? {
         return view?.mLayer
     }
     var layer: CachedLayer?
     var zPosition: Int = 0
 
-    let parentRenderer: GroupRenderer?
+    private(set) weak var parentRenderer: GroupRenderer?
 
     fileprivate let onNodeChange: () -> Void
     fileprivate let disposables = GroupDisposable()
@@ -71,7 +71,7 @@ class NodeRenderer {
         fatalError("Unsupported")
     }
 
-    init(node: Node, view: MacawView?, parentRenderer: GroupRenderer? = nil) {
+    init(node: Node, view: DrawingView?, parentRenderer: GroupRenderer? = nil) {
         self.view = view
         self.parentRenderer = parentRenderer
 
@@ -134,8 +134,8 @@ class NodeRenderer {
         applyClip(in: context)
 
         // draw masked image
-        if let mask = node.mask, let bounds = mask.bounds {
-            context.draw(getMaskedImage(bounds: bounds), in: bounds.toCG())
+        if let mask = node.mask, let bounds = mask.bounds, let maskedImage = getMaskedImage(bounds: bounds) {
+            context.draw(maskedImage, in: bounds.toCG())
             return
         }
 
@@ -216,8 +216,11 @@ class NodeRenderer {
             }
         }
 
-        let shapeImage = CIImage(cgImage: renderToImage(bounds: bounds, inset: inset, coloringMode: coloringMode).cgImage!)
-
+        guard let shapeCGImage = renderToImage(bounds: bounds, inset: inset, coloringMode: coloringMode)?.cgImage else {
+            return
+        }
+        
+        let shapeImage = CIImage(cgImage: shapeCGImage)
         var filteredImage = shapeImage
         for effect in effects {
             if let blur = effect as? GaussianBlur {
@@ -254,8 +257,9 @@ class NodeRenderer {
         return filter.outputImage!
     }
 
-    func renderToImage(bounds: Rect, inset: Double = 0, coloringMode: ColoringMode = .rgb) -> MImage {
-        MGraphicsBeginImageContextWithOptions(CGSize(width: bounds.w + inset, height: bounds.h + inset), false, 1)
+    func renderToImage(bounds: Rect, inset: Double = 0, coloringMode: ColoringMode = .rgb) -> MImage? {
+        let screenScale: CGFloat = MMainScreen()?.mScale ?? 1.0
+        MGraphicsBeginImageContextWithOptions(CGSize(width: bounds.w + inset, height: bounds.h + inset), false, screenScale)
         let tempContext = MGraphicsGetCurrentContext()!
 
         // flip y-axis and leave space for the blur
@@ -265,7 +269,7 @@ class NodeRenderer {
 
         let img = MGraphicsGetImageFromCurrentImageContext()
         MGraphicsEndImageContext()
-        return img!
+        return img
     }
 
     func doRender(in context: CGContext, force: Bool, opacity: Double, coloringMode: ColoringMode = .rgb) {
@@ -334,11 +338,14 @@ class NodeRenderer {
         RenderUtils.toBezierPath(clip).addClip()
     }
 
-    private func getMaskedImage(bounds: Rect) -> CGImage {
-        let mask = node.mask!
-        let image = renderToImage(bounds: bounds)
+    private func getMaskedImage(bounds: Rect) -> CGImage? {
+        guard let mask = node.mask, let image = renderToImage(bounds: bounds) else {
+            return .none
+        }
         let nodeRenderer = RenderUtils.createNodeRenderer(mask, view: .none)
-        let maskImage = nodeRenderer.renderToImage(bounds: bounds, coloringMode: .greyscale)
+        guard let maskImage = nodeRenderer.renderToImage(bounds: bounds, coloringMode: .greyscale) else {
+            return .none
+        }
         return apply(maskImage: maskImage, to: image)
     }
 

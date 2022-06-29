@@ -30,7 +30,7 @@ func addMorphingAnimation(_ animation: BasicAnimation, _ context: AnimationConte
     let toLocus = morphingAnimation.getVFunc()(animation.autoreverses ? 0.5 : 1.0)
     let duration = animation.autoreverses ? animation.getDuration() / 2.0 : animation.getDuration()
 
-    let layer = AnimationUtils.layerForNodeRenderer(renderer, context, animation: animation, shouldRenderContent: false)
+    let layer = AnimationUtils.layerForNodeRenderer(renderer, animation: animation, shouldRenderContent: false)
 
     // Creating proper animation
     let generatedAnimation = pathAnimation(
@@ -61,7 +61,7 @@ func addMorphingAnimation(_ animation: BasicAnimation, _ context: AnimationConte
         renderer.freeLayer()
 
         if  !animation.cycled &&
-            !animation.manualStop {
+                !animation.manualStop {
             animation.completion?()
         }
 
@@ -69,31 +69,12 @@ func addMorphingAnimation(_ animation: BasicAnimation, _ context: AnimationConte
     }
 
     layer.path = fromLocus.toCGPath()
-
-    // Stroke
-    if let stroke = shape.stroke {
-        if let color = stroke.fill as? Color {
-            layer.strokeColor = color.toCG()
-        } else {
-            layer.strokeColor = MColor.black.cgColor
-        }
-
-        layer.lineWidth = CGFloat(stroke.width)
-        layer.lineCap = MCAShapeLayerLineCap.mapToGraphics(model: stroke.cap)
-        layer.lineJoin = MCAShapeLayerLineJoin.mapToGraphics(model: stroke.join)
-        layer.lineDashPattern = stroke.dashes.map { NSNumber(value: $0) }
-    }
-
-    // Fill
-    if let color = shape.fill as? Color {
-        layer.fillColor = color.toCG()
-    } else {
-        layer.fillColor = MColor.clear.cgColor
-    }
+    layer.setupStrokeAndFill(shape)
 
     let animationId = animation.ID
     layer.add(generatedAnimation, forKey: animationId)
     animation.removeFunc = { [weak layer] in
+        shape.animations.removeAll { $0 === animation }
         layer?.removeAnimation(forKey: animationId)
     }
 
