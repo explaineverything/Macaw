@@ -80,7 +80,8 @@ class NodeRenderer {
                 return
             }
 
-            view?.setNeedsDisplay()
+            //TODO: commented because of infinite drawing CATiledLayer
+            //            view?.setNeedsDisplay()
         }
 
         addObservers()

@@ -80,6 +80,9 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         zoom.initialize(onChange: { [weak self] transform in
             self?.onZoomChange(t: transform)
         })
+#if os(OSX)
+        createLayer()
+#endif
         initializeView()
     }
 
@@ -96,6 +99,9 @@ open class MacawView: MView, MGestureRecognizerDelegate {
         zoom.initialize(onChange: { [weak self] transform in
             self?.onZoomChange(t: transform)
         })
+#if os(OSX)
+        createLayer()
+#endif
         initializeView()
     }
 
@@ -204,7 +210,28 @@ open class MacawView: MView, MGestureRecognizerDelegate {
     }
 }
 
+#if os(OSX)
+//INFO: needed for macOS, because custom layer is created and delegate ia assigned
+extension MacawView: CALayerDelegate {
+
+}
+#endif
+
 internal class DrawingView: MView {
+
+#if os(iOS)
+    override open class var layerClass: AnyClass {
+        get {
+            return CATiledLayer.self
+        }
+    }
+#else
+    open class var layerClass: AnyClass {
+        get {
+            return CATiledLayer.self
+        }
+    }
+#endif
 
     /// Scene root node
     open var node: Node = Group() {
@@ -289,9 +316,22 @@ internal class DrawingView: MView {
     var toRender = true
     var frameSetFirstTime = false
 
+    var myBounds = CGRect(x: 0, y: 0, width: 0, height: 0)
+    weak var weakSelf: DrawingView?
+
     func initializeView() {
         self.contentLayout = .none
         self.context = RenderContext(view: self)
+        self.myBounds = bounds
+        self.weakSelf = self
+
+        guard let tiledLayer = layer as? CATiledLayer else {
+            return
+        }
+
+        tiledLayer.levelsOfDetail = 4
+        tiledLayer.levelsOfDetailBias = 6
+        tiledLayer.tileSize = CGSize(width: 512, height: 512)
     }
 
     @objc public required init?(coder aDecoder: NSCoder) {
@@ -302,32 +342,100 @@ internal class DrawingView: MView {
         super.init(frame: frame)
     }
 
-    open override func layoutSubviews() {
-        super.layoutSubviews()
-        setNeedsDisplay()
+    deinit {
+        let thisLayer = layer as CALayer?
+        thisLayer?.delegate = nil
     }
 
-    override open func draw(_ rect: CGRect) {
-        context.cgContext = MGraphicsGetCurrentContext()
-        guard let ctx = context.cgContext else {
+#if os(OSX)
+    private func createLayer() {
+        let className = type(of: self).layerClass as! CATiledLayer.Type
+        let tiledLayer = className.init()
+        tiledLayer.delegate = self
+        tiledLayer.frame = bounds
+        layer = tiledLayer
+    }
+#endif
+
+    open override func layoutSubviews() {
+        super.layoutSubviews()
+
+        //INFO: added condition, because of not needed refreshing on iPad Pro 12,9''
+        if (myBounds != bounds) {
+            myBounds = bounds
+            setNeedsDisplay()
+        }
+    }
+
+    private func lock(obj: AnyObject, blk:() -> ()) {
+        objc_sync_enter(obj)
+        blk()
+        objc_sync_exit(obj)
+    }
+
+#if os(iOS)
+    override open func draw(_ layer: CALayer, in ctx: CGContext) {
+
+        guard let strongSelf = weakSelf,
+            let renderer = strongSelf.renderer else {
             return
         }
 
-        if self.backgroundColor == nil {
-            ctx.clear(rect)
+        //INFO: CATiledLayer draws using concurent queue, Macaw needs serial access (it doesn't support multithreading)
+        strongSelf.lock(obj: renderer) {
+
+            if Thread.isMainThread {
+                strongSelf.context.cgContext = ctx
+            }
+            else {
+
+                DispatchQueue.main.sync {
+                    strongSelf.context.cgContext = ctx
+                }
+            }
+
+            if strongSelf.backgroundColor == nil {
+                ctx.clear(strongSelf.myBounds)
+            }
+
+            // TODO: actually we should track all changes
+            strongSelf.placeManager.setLayout(place: strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
+            ctx.concatenate(strongSelf.place.toCG())
+
+            renderer.calculateZPositionRecursively()
+            renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
+        }
+    }
+#else
+    open func draw(_ layer: CALayer, in ctx: CGContext) {
+
+        guard let strongSelf = weakSelf,
+            let renderer = strongSelf.renderer else {
+            return
         }
 
-        guard let renderer = renderer else {
-            return
+        if Thread.isMainThread {
+            strongSelf.context.cgContext = ctx
+        }
+        else {
+
+            DispatchQueue.main.sync {
+                strongSelf.context.cgContext = ctx
+            }
+        }
+
+        if strongSelf.backgroundColor == nil {
+            ctx.clear(strongSelf.myBounds)
         }
 
         // TODO: actually we should track all changes
-        placeManager.setLayout(place: layoutHelper.getTransform(renderer, contentLayout, bounds.size.toMacaw()))
-        ctx.concatenate(self.place.toCG())
+        strongSelf.placeManager.setLayout(place: strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
+        ctx.concatenate(strongSelf.place.toCG())
 
         renderer.calculateZPositionRecursively()
-        renderer.render(in: ctx, force: false, opacity: node.opacity)
+        renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
     }
+#endif
 
     final func findNodeAt(location: CGPoint) -> Node? {
         guard let ctx = context.cgContext else {
@@ -684,8 +792,9 @@ class LayoutHelper {
         let node = nodeRenderer.node
         var rect = node.bounds
         if let canvas = node as? SVGCanvas {
-            if let view = nodeRenderer.view {
-                rect = canvas.layout(size: view.bounds.size.toMacaw()).rect()
+            if let _ = nodeRenderer.view {
+                //TODO: changed
+                rect = canvas.layout(size: size).rect()
             } else {
                 rect = BoundsUtils.getNodesBounds(canvas.contents)
             }

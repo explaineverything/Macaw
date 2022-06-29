@@ -40,8 +40,10 @@ class GroupRenderer: NodeRenderer {
 
     override func doRender(in context: CGContext, force: Bool, opacity: Double, coloringMode: ColoringMode = .rgb) {
         renderers.forEach { renderer in
-            if !renderer.isAnimating() {
-                renderer.render(in: context, force: force, opacity: opacity, coloringMode: coloringMode)
+            autoreleasepool {
+                if !renderer.isAnimating() {
+                    renderer.render(in: context, force: force, opacity: opacity, coloringMode: coloringMode)
+                }
             }
         }
     }

@@ -6,7 +6,7 @@
 //
 //
 
-enum SVGParserError: Error, Equatable {
+public enum SVGParserError: Error, Equatable {
     case noSuchFile(path: String)
     case incorrectFilterEffectsOrder
     case maskUnsupportedNodeType

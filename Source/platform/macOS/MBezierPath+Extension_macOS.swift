@@ -157,6 +157,10 @@ extension MBezierPath {
     func addArc(withCenter: NSPoint, radius: CGFloat, startAngle: CGFloat, endAngle: CGFloat, clockwise: Bool) {
         let startAngleRadian = ((startAngle) * (180.0 / .pi))
         let endAngleRadian = ((endAngle) * (180.0 / .pi))
+        guard !startAngleRadian.isNaN, !endAngleRadian.isNaN else {
+            //INFO: on macOS NSBezierPath crashes for NaN angles, on iOS UIBezierPath it is ok
+            return
+        }
         self.appendArc(withCenter: withCenter, radius: radius, startAngle: startAngleRadian, endAngle: endAngleRadian, clockwise: !clockwise)
     }
 
