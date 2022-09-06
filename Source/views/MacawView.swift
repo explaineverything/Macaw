@@ -389,7 +389,8 @@ internal class DrawingView: MView {
             }
             else {
 
-                //INFO: DispatchQueue.main.sync doesn't work properly here when we are in background
+                //INFO: DispatchQueue.main.sync doesn't work properly and locks the app, if there are many calls for rendering???
+                //      Wystarczy zakolejkować więcej wywołań renderowania, np. poprzez włączanie popover’a (nie wiadomo czemu na macOS CATiledLayer się wtedy przerenderowywuje, także dla PDFa) albo przejście do tła.
 //                DispatchQueue.main.sync {
                     strongSelf.context.cgContext = ctx
 //                }
