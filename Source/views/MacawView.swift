@@ -389,9 +389,10 @@ internal class DrawingView: MView {
             }
             else {
 
-                DispatchQueue.main.sync {
+                //INFO: DispatchQueue.main.sync doesn't work properly here when we are in background
+//                DispatchQueue.main.sync {
                     strongSelf.context.cgContext = ctx
-                }
+//                }
             }
 
             if strongSelf.backgroundColor == nil {
