@@ -271,13 +271,17 @@ open class MacawView: MView, MGestureRecognizerDelegate {
             return
         }
 
-        renderer.calculateZPositionRecursively()
+        //INFO: CATiledLayer draws using concurent queue, Macaw needs serial access (it doesn't support multithreading)
+        strongSelf.lock(obj: renderer) {
 
-        // TODO: actually we should track all changes
-        strongSelf.placeManager.setLayout(place: strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
+            renderer.calculateZPositionRecursively()
 
-        ctx.concatenate(strongSelf.place.toCG())
-        renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
+            // TODO: actually we should track all changes
+            strongSelf.placeManager.setLayout(place: strongSelf.layoutHelper.getTransform(renderer, strongSelf.contentLayout, strongSelf.myBounds.size.toMacaw()))
+
+            ctx.concatenate(strongSelf.place.toCG())
+            renderer.render(in: ctx, force: false, opacity: strongSelf.node.opacity)
+        }
     }
     #endif
 
