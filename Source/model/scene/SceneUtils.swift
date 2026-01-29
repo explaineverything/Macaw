@@ -6,6 +6,8 @@
 //
 //
 
+import Foundation
+
 class SceneUtils {
     static func shapeCopy(from: Shape) -> Shape {
         let shape = Shape(form: from.form,
